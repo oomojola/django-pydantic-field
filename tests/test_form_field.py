@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from django.forms import Form, modelform_factory
 from django_pydantic_field import fields, forms
 
-from .conftest import InnerSchema
+from .conftest import InnerSchema, InnerSchemaComplex
 from .test_app.models import SampleForwardRefModel, SampleSchema
 
 
@@ -26,6 +26,7 @@ def test_empty_form_values():
     assert field.clean(None) is None
 
 
+
 def test_invalid_raises():
     field = forms.SchemaField(InnerSchema)
     with pytest.raises(ValidationError) as e:
@@ -38,6 +39,19 @@ def test_invalid_raises():
 
     assert e.match("stub_str")
     assert e.match("stub_list")
+
+
+def test_invalid_raises_with_context():
+    field = forms.SchemaField(InnerSchemaComplex)
+    with pytest.raises(ValidationError) as e:
+        field.clean("")
+
+    assert e.match("This field is required")
+
+    with pytest.raises(ValidationError) as e:
+        field.clean('{"sub_type": "blah"}')
+
+
 
 
 @pytest.mark.xfail(

@@ -32,6 +32,7 @@ if t.TYPE_CHECKING:
     ModelType = t.Type[pydantic.BaseModel]
     ConfigType = t.Union[pydantic.ConfigDict, t.Type[pydantic.BaseConfig], t.Type]
 
+    ErrorRendererType = t.Callable[[list['pydantic.error_wrappers.ErrorDict']],str]
 
 class SchemaEncoder(DjangoJSONEncoder):
     def __init__(
@@ -139,3 +140,5 @@ def _get_field_schema_params(schema, config=None, allow_null=False, **kwargs) ->
         __config__=inherit_configs(schema, config),
     )
     return params
+
+

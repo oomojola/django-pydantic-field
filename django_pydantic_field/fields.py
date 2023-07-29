@@ -4,6 +4,7 @@ from functools import partial
 
 import django
 import pydantic
+from pydantic.error_wrappers import display_errors
 from django.core import exceptions as django_exceptions
 from django.db.models.fields import NOT_PROVIDED
 from django.db.models.fields.json import JSONField
@@ -44,6 +45,7 @@ class PydanticSchemaField(JSONField, t.Generic[base.ST]):
         *args,
         schema: t.Union[t.Type["base.ST"], "GenericContainer", "t.ForwardRef", str, None] = None,
         config: "base.ConfigType" = None,
+        error_renderer:'base.ErrorRendererType' = display_errors,
         **kwargs,
     ):
         self.export_params = base.extract_export_kwargs(kwargs, dict.pop)
@@ -51,6 +53,7 @@ class PydanticSchemaField(JSONField, t.Generic[base.ST]):
 
         self.config = config
         self._resolve_schema(schema)
+        self.error_renderer = error_renderer
 
     def __copy__(self):
         _, _, args, kwargs = self.deconstruct()
@@ -69,7 +72,7 @@ class PydanticSchemaField(JSONField, t.Generic[base.ST]):
             assert self.decoder is not None
             return self.decoder().decode(value)
         except pydantic.ValidationError as e:
-            raise django_exceptions.ValidationError(e.errors())
+            raise django_exceptions.ValidationError(self.error_renderer(e.errors()))
 
     if django.VERSION[:2] >= (4, 2):
 

@@ -2,6 +2,7 @@ import typing as t
 from functools import partial
 
 import pydantic
+from pydantic.error_wrappers import display_errors
 from django.core.exceptions import ValidationError
 from django.forms.fields import InvalidJSONInput, JSONField
 
@@ -16,6 +17,7 @@ class SchemaField(JSONField, t.Generic[base.ST]):
         schema: t.Union[t.Type["base.ST"], t.ForwardRef],
         config: t.Optional["base.ConfigType"] = None,
         __module__: t.Optional[str] = None,
+        error_renderer:'base.ErrorRendererType' = display_errors,
         **kwargs
     ):
         self.schema = base.wrap_schema(
@@ -34,12 +36,13 @@ class SchemaField(JSONField, t.Generic[base.ST]):
         )
         kwargs.update(encoder=encoder, decoder=decoder)
         super().__init__(**kwargs)
+        self.error_renderer = error_renderer or str
 
     def to_python(self, value):
         try:
             return super().to_python(value)
         except pydantic.ValidationError as e:
-            raise ValidationError(e.errors(), code="invalid")
+            raise ValidationError(self.error_renderer(e.errors()), code="invalid")
 
     def bound_data(self, data, initial):
         try:
