@@ -19,6 +19,20 @@ class InnerSchema(pydantic.BaseModel):
         allow_mutation = True
         frozen = False
 
+class Basic(pydantic.BaseModel):
+    type:t.Literal['basic']
+
+class Complex(pydantic.BaseModel):
+    type:t.Literal['complex']
+
+class InnerSchemaComplex(pydantic.BaseModel):
+    sub_type:t.Union[Basic,Complex] = pydantic.Field(discriminator='type')
+
+    class Config:
+        allow_mutation = True
+        frozen = False
+
+
 
 @dataclass
 class SampleDataclass:
