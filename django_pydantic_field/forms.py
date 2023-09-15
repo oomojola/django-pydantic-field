@@ -5,6 +5,7 @@ import pydantic
 from pydantic.error_wrappers import display_errors
 from django.core.exceptions import ValidationError
 from django.forms.fields import InvalidJSONInput, JSONField
+from django.utils.translation import gettext_lazy as _
 
 from . import base
 
@@ -12,12 +13,16 @@ __all__ = ("SchemaField",)
 
 
 class SchemaField(JSONField, t.Generic[base.ST]):
+    default_error_messages = {
+        "schema_error": _("Schema didn't match. Detail: %(detail)s"),
+    }
+
     def __init__(
         self,
         schema: t.Union[t.Type["base.ST"], t.ForwardRef],
         config: t.Optional["base.ConfigType"] = None,
         __module__: t.Optional[str] = None,
-        error_renderer:'base.ErrorRendererType' = display_errors,
+        error_renderer:t.Optional['base.ErrorRendererType'] = None,
         **kwargs
     ):
         self.schema = base.wrap_schema(
@@ -42,7 +47,19 @@ class SchemaField(JSONField, t.Generic[base.ST]):
         try:
             return super().to_python(value)
         except pydantic.ValidationError as e:
-            raise ValidationError(self.error_renderer(e.errors()), code="invalid")
+<<<<<<< HEAD
+            if self.error_renderer:
+                raise ValidationError(self.error_renderer(e.errors()), code="invalid")
+            raise ValidationError(
+                self.error_messages["schema_error"],
+                code="invalid",
+                params={
+                    "value": value,
+                    "detail": str(e),
+                    "errors": e.errors(),
+                    "json": e.json(),
+                },
+            )
 
     def bound_data(self, data, initial):
         try:
