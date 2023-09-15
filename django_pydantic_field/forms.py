@@ -47,7 +47,6 @@ class SchemaField(JSONField, t.Generic[base.ST]):
         try:
             return super().to_python(value)
         except pydantic.ValidationError as e:
-<<<<<<< HEAD
             if self.error_renderer:
                 raise ValidationError(self.error_renderer(e.errors()), code="invalid")
             raise ValidationError(
